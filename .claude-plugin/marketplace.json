@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "basic-repo-standards",
-      "description": "Audit a repository, app by app in a monorepo, against baseline hygiene standards (README, CLAUDE.md as discrete rule sections with coding standards + tech stack, CI coverage with named checks and main/master-safe branch triggers, secrets/.gitignore) and apply those hygiene fixes directly. Separately, per app, surface every codebase-structure gap grouped by pattern (lengthy files, mixed responsibilities, etc.) and ask whether to draft a refactoring plan — only that refactor work waits for explicit confirmation. Writes a BASIC_REPO_STANDARDS.md audit report.",
+      "description": "Identify each project/app in a repo and make sure each has a real README.md, a CLAUDE.md with the baseline coding-standards goal statement, .gitignore coverage for env files plus a .env.example, and GitHub Actions CI covering the repo's actual working branches — fixing any gaps directly, then writing a BASIC_REPO_STANDARDS.md report.",
       "source": "./plugins/basic-repo-standards",
       "category": "productivity"
     }
