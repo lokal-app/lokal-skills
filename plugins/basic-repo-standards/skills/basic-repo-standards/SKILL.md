@@ -1,9 +1,9 @@
 ---
-name: basic-coding-standards
+name: basic-repo-standards
 description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation written as discrete headed rule sections (not one blob), GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, per app, surfacing every significant codebase-structure gap (lengthy-file pattern, everything mixed in one place, missing pieces, etc.), grouped by pattern with every affected file clubbed together rather than one finding per file, and asking whether to include a refactoring plan built around the user's stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
 ---
 
-# Basic Coding Standards Audit
+# Basic Repo Standards Audit
 
 This checklist is **technology-agnostic by design** — the same standard applies
 whether the repo is Python, Go, a JS/TS monorepo, a mobile app, or anything else.
