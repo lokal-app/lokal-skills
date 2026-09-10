@@ -316,8 +316,22 @@ a small, clean app may genuinely have fewer than 3 — see below).
   not just the first three noticed. If the app genuinely has fewer than 3
   meaningful gaps, report fewer — never pad the list with minor nitpicks to hit
   the number.
-- For each of the top 3, cite concrete evidence (specific files/examples, not a
-  vague "could be cleaner").
+- State each of the top 3 as **[named pattern/principle violated] — affected
+  file(s)**, not a narrative paragraph: lead with the concrete label (e.g.
+  "Duplicate/near-duplicate code," "Single Responsibility Principle violation,"
+  "Lengthy-file / god-file pattern," "No test coverage"), then the specific file(s)
+  and a short evidence note (line counts, what's duplicated, why it violates the
+  label). e.g.:
+  - "**Duplicate/messy code** — `src/features/chat-legacy/QuizCard.jsx` and
+    `chat-redesign/QuizCard.jsx` (426 lines each) are near-duplicate components
+    instead of one shared one."
+  - "**Single Responsibility Principle violation** — `MessageContent.jsx` (408-454
+    lines across two copies) mixes rendering, data-fetching, and formatting in one
+    component."
+  - "**No test coverage** — no test framework or test files exist at all; only
+    `dev`/`build`/`preview` scripts."
+  This makes each gap scannable as "pattern → files," not prose that has to be read
+  end to end to find out what's actually wrong or where.
 
 Do **not** draft a refactor plan at this point — report the top 3 and ask whether
 to include one; see Phase 2, which handles this per app.
@@ -336,14 +350,21 @@ unrelated to another's; the user may want a refactor plan for `apps/web` while
 declining one entirely for `apps/admin`. Never merge multiple apps' gaps into one
 combined ask. Instead, per app:
 
-1. Report that app's **top 3 structural gaps** from check 5 (messy / scalable /
-   gaps), each with its concrete evidence, then ask directly whether they want a
-   refactoring plan for that app. e.g.: "For `apps/web`, the top structural gaps
-   I'd flag are: (1) 3 files over 1000 lines mixing unrelated responsibilities,
-   (2) the same validation logic duplicated in 4 places — already diverged, one
-   copy is missing a check the others have, (3) no test coverage on the payments
-   flow. Want me to put together a refactoring plan for `apps/web`?" Report
-   fewer than 3 if that's genuinely all there is — don't inflate the list.
+1. Report that app's **top 3 structural gaps** from check 5, each labeled by
+   pattern/principle with its affected file(s) (the format check 5 requires — not
+   a narrative paragraph), then ask directly whether they want a refactoring plan
+   for that app. e.g.:
+
+   > For `apps/web`, the top structural gaps:
+   > 1. **Lengthy-file / god-file pattern** — `OrderProcessor.jsx` (1,340 lines)
+   >    mixes unrelated responsibilities.
+   > 2. **Duplicate/messy code** — validation logic duplicated in 4 places,
+   >    already diverged (one copy is missing a check the others have).
+   > 3. **No test coverage** — the payments flow has no tests.
+   >
+   > Want me to put together a refactoring plan for `apps/web`?
+
+   Report fewer than 3 if that's genuinely all there is — don't inflate the list.
 2. If they say yes, ask for their priorities/constraints before drafting anything —
    don't assume scope. Useful questions: which parts of the codebase matter most
    right now, incremental (small PRs alongside ongoing feature work) vs. a
