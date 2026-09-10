@@ -106,8 +106,14 @@ stale (documents a command/script that was renamed or removed) is a finding too.
 
 ### 2. CLAUDE.md
 
-- Does `CLAUDE.md` exist at the root (and per subproject, if subprojects have
-  meaningfully different stacks/conventions)?
+- Does `CLAUDE.md` exist at the root, **and at each app/subproject root**? Default
+  to expecting one per app — each app is audited as its own unit (check 0), so it
+  needs its own standards file. The only exception is when a root `CLAUDE.md`
+  explicitly and completely covers that app already (states its stack, and its
+  standards apply to it without gaps) — don't assume this, verify it by actually
+  checking whether the root file mentions the app/its stack; a root `CLAUDE.md`
+  written with only one app's stack in mind does not cover a sibling app on a
+  different stack just because they share a repo.
 - If it exists, does it contain actual **coding standards**, or is it
   empty/near-empty/just a copy of README content with no standards?
 
@@ -176,6 +182,14 @@ which of the areas above are missing.
   step (compiled language, bundler config), CI should build; if there's a linter
   config, CI should lint. Flag gaps where the repo clearly has the capability but CI
   doesn't exercise it, not stylistic preferences.
+- **In a monorepo, judge coverage per app, not just "does CI exist."** A single
+  shared `.github/workflows/` at root is normal and fine — a monorepo doesn't need
+  one workflow file per app — but check that CI's actual jobs/steps (path filters,
+  a build matrix, or separate jobs per app) exercise **every** app's own
+  lint/test/build capability. It's a common and easy-to-miss gap: root CI runs
+  `apps/web`'s tests but silently never touches `apps/api`'s, because a workflow
+  was written for the first app added and never extended. Name which specific
+  app(s) are missing coverage, not just "CI could be broader."
 - If workflows reference environment variables/secrets, check whether they're pulled
   from `secrets.*` / `vars.*` properly or hardcoded inline.
 - **Named checks.** Every job (and the workflow itself) should have an explicit,
