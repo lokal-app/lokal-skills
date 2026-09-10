@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "basic-coding-standards",
-      "description": "Audit a repository against baseline, tech-stack-agnostic hygiene standards (README, CLAUDE.md coding standards, CI coverage, secrets/.gitignore) and propose a fix plan, only applying changes after explicit confirmation.",
+      "description": "Audit a repository against baseline hygiene standards (README, CLAUDE.md coding standards + tech stack, CI coverage/branch correctness, secrets/.gitignore) and, for large codebases, flag structural debt and optionally draft a refactoring plan. Only applies changes after explicit confirmation.",
       "source": "./plugins/basic-coding-standards",
       "category": "productivity"
     }

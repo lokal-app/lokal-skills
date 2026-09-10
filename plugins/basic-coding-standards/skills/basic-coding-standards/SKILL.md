@@ -1,6 +1,6 @@
 ---
 name: basic-coding-standards
-description: Audit a repository (and any subprojects/monorepo packages) against baseline hygiene standards — README specificity, CLAUDE.md presence and coding-standards content, GitHub Actions CI coverage, committed secrets/.env files, .gitignore, .env.example — then propose a fix plan and only apply changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
+description: Audit a repository (and any subprojects/monorepo packages) against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation, GitHub Actions CI coverage and branch-name correctness, committed secrets/.env files, .gitignore, .env.example — plus, for large/lengthy codebases, flagging structural debt and (only if the user wants one) drafting a refactoring plan built around their stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
 ---
 
 # Basic Coding Standards Audit
@@ -95,9 +95,27 @@ stale (documents a command/script that was renamed or removed) is a finding too.
 
 **What counts as real coding standards.** The bar is the same across every repo
 regardless of language, framework, or platform — the goal is code that is clean,
-reusable, and structured, not compliance with any single stack's idioms. When
-judging an existing `CLAUDE.md`, or drafting one, cover (in language-agnostic terms —
-translate to the repo's actual stack, never paste a template verbatim):
+reusable, and structured, not compliance with any single stack's idioms.
+
+**Required opening.** Every `CLAUDE.md` this skill drafts must open with this goal
+statement, verbatim, before anything else (tech stack, standards, or otherwise).
+When judging an existing `CLAUDE.md`, its absence is itself a finding — add it
+rather than treating the file as already sufficient:
+
+> The goal is to produce code that is:
+>
+> - Maintainable
+> - Readable
+> - Consistent
+> - Reusable where appropriate
+> - Easy to extend
+> - Safe to modify
+>
+> Follow these guidelines when creating or modifying code.
+
+When judging an existing `CLAUDE.md`, or drafting the rest of one, cover (in
+language-agnostic terms — translate to the repo's actual stack, never paste a
+template verbatim):
 
 - **Naming** — names say what something is/does; no abbreviations that need
   decoding, no misleading names.
@@ -117,10 +135,19 @@ translate to the repo's actual stack, never paste a template verbatim):
   concretely enough to be checked (not just "write tests").
 - **Commit/PR conventions** — message format, what a PR description must contain.
 
-A `CLAUDE.md` that only restates the tech stack, lists dependencies, or repeats the
-README does **not** satisfy this check — flag it as missing standards even though
-the file exists. A `CLAUDE.md` that covers the above only partially is a finding
-too: name which of the areas above are missing.
+Also required, but factual rather than a principle — **Tech stack**: `CLAUDE.md`
+must name the actual language(s), framework(s), package manager, and other major
+tools/runtimes in use (verified against the real manifest/lockfile, not guessed).
+This is the one place stack-specific detail belongs; the areas above stay written
+as portable principles, and may reference the stated stack for how a principle is
+applied locally (e.g. "naming: files use kebab-case per this repo's Next.js
+convention").
+
+Naming the tech stack is necessary but never sufficient on its own. A `CLAUDE.md`
+that only restates the tech stack, lists dependencies, or repeats the README does
+**not** satisfy this check — flag it as missing standards even though the file
+exists. A `CLAUDE.md` that covers the above only partially is a finding too: name
+which of the areas above are missing.
 
 ### 3. GitHub Actions / CI
 
@@ -158,9 +185,78 @@ too: name which of the areas above are missing.
 - Does `.env.example` (or equivalent) exist to document required variables when a
   tracked or gitignored `.env` pattern is in use?
 
-Repeat checks 1–4 for every subproject identified in step 0.
+### 5. Codebase scale — flag refactor opportunities in large/lengthy projects
+
+This check is about the *code itself*, not repo hygiene files, so it's additive to
+1–4, not a replacement. Only run it if the repo is actually large/lengthy — a small
+project doesn't need this.
+
+- Get a quick read-only signal of scale and structural health, e.g.:
+  `git ls-files | xargs wc -l 2>/dev/null | sort -rn | head -20` for the biggest
+  files, a rough file count per top-level directory, and a skim for obvious smells
+  (a handful of "god files" far larger than the rest, deeply nested logic, the same
+  block of logic copy-pasted across several files, no discernible module
+  boundaries).
+- Treat the repo as "lengthy" when it shows real scale (well beyond a small
+  script/app) **and** structural symptoms like the above — size alone without
+  symptoms isn't a finding.
+- If it qualifies, record it as a distinct finding category — **structural debt**
+  — separate from the hygiene findings in checks 1–4. Name the specific symptoms
+  observed (e.g. "3 files over 1000 lines mixing unrelated responsibilities",
+  "the same validation logic duplicated in 4 places") rather than a vague "code
+  could be cleaner."
+- Judge and state **how strongly refactoring is recommended, and why** — this is
+  not optional hedging, give a real opinion:
+  - **Strongly recommend** when the symptoms are actively costing the team now —
+    the duplication has already caused a bug fixed in one copy but not another,
+    the god files are the ones getting touched most often (check recent commit
+    activity on them), or the tangled structure makes onboarding/reviewing
+    genuinely hard.
+  - **Recommend** when the debt is real but currently contained — it will bite
+    later (as the team or codebase grows) but isn't actively causing incidents.
+  - **Optional / low priority** when the smells are present but isolated,
+    low-churn, or in code nobody expects to extend further.
+  - Base the level on concrete evidence (churn/`git log --oneline -- <file>`
+    frequency on the worst files, duplication that has actually diverged and
+    caused a bug, size relative to the rest of the repo) — not a gut feeling.
+
+Do **not** draft a refactor plan yet at this point — see the refactor-plan handling
+in Phase 2, which requires asking the user first.
+
+Repeat checks 1–4 (and 5, where it applies) for every subproject identified in
+step 0.
 
 ## Phase 2 — Audit findings → Plan → Confirm → Execute
+
+### Structural debt (check 5) gets a separate track — ask before planning
+
+Hygiene findings (checks 1–4) go straight into the itemized plan below. **Structural
+debt does not** — it's a bigger, more subjective decision than "add a missing
+`.env.example`," so never draft a refactoring plan unprompted. Instead:
+
+1. Report the structural-debt finding alongside the others, but expand this one
+   beyond a single line: state the symptoms, your recommendation strength
+   (strongly recommend / recommend / optional — from check 5) **and the concrete
+   reason behind it**, then ask whether they want a refactor plan. e.g.: "This repo
+   also has notable structural debt: 3 files over 1000 lines mixing
+   responsibilities, and duplicated validation logic in 4 places that has already
+   diverged (one copy is missing a check the others have). I'd strongly recommend
+   refactoring this — it's an active bug source, not just untidiness. Want me to
+   put together a refactoring plan for it?" Give your honest assessment even when
+   it's "optional" — don't inflate urgency to push action, and don't soften a real
+   risk to avoid sounding alarmist.
+2. If they say yes, ask for their priorities/constraints before drafting anything —
+   don't assume scope. Useful questions: which parts of the codebase matter most
+   right now, incremental (small PRs alongside ongoing feature work) vs. a
+   dedicated refactor push, any areas that are off-limits (e.g. "don't touch the
+   payments module, it's being rewritten separately"), and any deadline pressure
+   that should shape how aggressive to be.
+3. Only then draft the refactor plan, and present it as its **own** itemized list
+   with its own confirmation question — never bundled into the same yes/no as the
+   hygiene fixes. Someone may want the quick hygiene fixes applied immediately while
+   still thinking over a multi-week refactor.
+4. If they say no (or don't want a refactor plan right now), just note the finding
+   in the report as an open item and move on — don't push.
 
 ### Create the plan
 
@@ -260,8 +356,33 @@ After execution:
   safely automated (e.g. rotating a leaked secret, purging git history — flag as
   the user's action item, don't attempt it).
 
+### Share a written audit report
+
+Always produce a Markdown report of the full audit as its own file, in addition to
+the short chat summary — this is the one file write in this skill that isn't gated
+behind plan approval, because it's a record of the audit itself, not a change to
+the repository's standards/config. Still, mention you're writing it.
+
+- Write it to `CODING_STANDARDS_AUDIT.md` at the audited repo's root (or the
+  relevant subproject root, for a single-subproject audit). If one already exists
+  from a prior run, overwrite it — the report reflects the latest audit, it isn't a
+  history log.
+- Contents: audit date, repo/subproject(s) covered, every finding from checks 1–5
+  grouped by check (including ones not acted on), the plan that was proposed, which
+  items were approved/executed vs. declined/left open, and the refactor-plan
+  discussion outcome from check 5 if it came up (asked, and what the user decided).
+- This report is for the team, not just this session — write it so someone who
+  wasn't in the conversation can read it standalone and understand what was found
+  and what happened.
+- Do not commit or push it — creating the file is exempt from the approval gate,
+  but putting it under version control is still a repository change like any
+  other, and stays behind the same explicit-approval rule as everything else.
+
 ## Hard rule recap
 
-No repository modification before explicit approval of a specific, itemized plan.
-Inspection is always read-only. When in doubt about whether something counts as
+No repository *fix* — anything that changes standards, config, or tracked
+content — happens before explicit approval of a specific, itemized plan.
+Inspection is always read-only. The one exception is the audit report file
+itself (see "Share a written audit report"), which documents the audit rather
+than changing the repo. When in doubt about whether something counts as
 approval, ask instead of assuming.
