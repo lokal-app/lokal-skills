@@ -1,6 +1,6 @@
 ---
 name: basic-repo-standards
-description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation written as discrete headed rule sections (not one blob), GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, per app, surfacing every significant codebase-structure gap (lengthy-file pattern, everything mixed in one place, missing pieces, etc.), grouped by pattern with every affected file clubbed together rather than one finding per file, and asking whether to include a refactoring plan built around the user's stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
+description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation written as discrete headed rule sections (not one blob), GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — then applies those hygiene fixes directly, no confirmation needed. Separately, per app, surfaces every significant codebase-structure gap (lengthy-file pattern, everything mixed in one place, missing pieces, etc.), grouped by pattern with every affected file clubbed together rather than one finding per file, and asks whether to include a refactoring plan; refactor work only proceeds after explicit confirmation. Writes a BASIC_REPO_STANDARDS.md report of the audit. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection.
 ---
 
 # Basic Repo Standards Audit
@@ -12,15 +12,21 @@ convention"; express every finding and every proposed fix in terms that would ma
 sense to someone who has never seen this language, then translate to the repo's
 actual tooling only when writing the concrete plan.
 
-Audits a repository against a fixed checklist, then proposes changes. **No file in the
-target repository is ever created, edited, or deleted until the user gives explicit,
-unambiguous approval of a written plan.** This gate is the core rule of this skill and
-overrides any instinct to "just fix it while I'm here."
+Audits a repository against a fixed checklist, then acts on it directly. **Hygiene
+fixes (checks 1–4 — README, CLAUDE.md, CI, secrets/.gitignore) are applied right
+after inspection, with no confirmation round-trip** — these are additive,
+well-scoped, reversible-via-git changes, and asking about each one just adds
+friction. **Codebase restructuring (check 5) is the one thing that still requires
+explicit approval** before any refactor work starts — that's a bigger, more
+subjective, more invasive change than adding a missing file, so it keeps its own
+gate. This split is the core rule of this skill: never expand the approval gate to
+cover hygiene fixes, and never skip it for a refactor.
 
-The workflow has exactly two phases, in order, with a hard stop between them:
+The workflow:
 
 ```
-INSPECT (read-only) → AUDIT FINDINGS → PLAN → CONFIRM (explicit) → EXECUTE → VALIDATE → REPORT
+INSPECT (read-only) → APPLY HYGIENE FIXES (checks 1-4) → WRITE BASIC_REPO_STANDARDS.md
+  → PER APP: ASK ABOUT REFACTOR (check 5) → CONFIRM → EXECUTE REFACTOR → REPORT
 ```
 
 ## Phase 1 — Inspect (read-only, no exceptions)
@@ -343,13 +349,38 @@ whether to include one; see Phase 2, which handles this per app.
 
 Repeat checks 1–5 for every subproject identified in step 0.
 
-## Phase 2 — Audit findings → Plan → Confirm → Execute
+## Phase 2 — Apply hygiene fixes, then handle structure per app
 
-### Codebase structure (check 5) gets a separate track — ask before planning, per app
+### Hygiene fixes (checks 1–4) — apply immediately, no confirmation needed
 
-Hygiene findings (checks 1–4) go straight into the itemized plan below. **Check 5
-does not** — it's a bigger, more subjective decision than "add a missing
-`.env.example`," so never draft a refactoring plan unprompted. Run this entire
+For every finding from checks 1–4 — in the repo root, and in each app if it's a
+monorepo — just make the fix directly, right after inspection:
+
+- Missing or generic **README** → write a specific one (check 1's rubric).
+- Missing or insufficient **CLAUDE.md** → add or rewrite it (check 2's rubric:
+  required goal statement, discrete headed rule sections, real tech stack).
+- Missing or insufficient **CI** → add or extend the workflow(s) (check 3: named
+  jobs, `branches: [main, master]`, exercising whatever the repo actually has).
+- Tracked secrets / missing `.gitignore` or `.env.example` → fix per check 4
+  (`git rm --cached` to untrack rather than deleting outright, extend
+  `.gitignore`, add `.env.example`).
+
+No plan needs to be presented or approved for these — they're additive/corrective
+and reversible via git. Still don't drift into unrelated cleanup: fix only what
+checks 1–4 actually flagged, nothing more.
+
+**The one exception:** if a specific fix carries real ambiguity or risk on its
+own — a tracked file contains what looks like a genuine secret (rotation/history
+implications), or removing something might break behavior not visible from the
+repo alone — stop and ask specifically about *that* item instead of blocking every
+hygiene fix behind a general question. Never rewrite git history to purge secrets
+without a separate, explicit ask.
+
+### Structural gaps (check 5) — the only track that needs approval, per app
+
+Check 5 is a bigger, more subjective decision than "add a missing
+`.env.example`," so it keeps the confirmation gate that the hygiene fixes above no
+longer need: never draft or execute a refactoring plan unprompted. Run this entire
 track **independently per app** — one app's gaps and yes/no answer are unrelated
 to another's; the user may want a refactor plan for `apps/web` while declining one
 entirely for `apps/admin`. Never merge multiple apps' gaps into one combined ask.
@@ -380,73 +411,53 @@ Instead, per app:
    payments module, it's being rewritten separately"), and any deadline pressure
    that should shape how aggressive to be.
 3. Only then draft the refactor plan for that app, and present it as its **own**
-   itemized list with its own confirmation question — never bundled into the same
-   yes/no as the hygiene fixes, or with another app's refactor plan. Someone may
-   want the quick hygiene fixes applied immediately while still thinking over a
-   multi-week refactor for one specific app.
+   itemized list with its own confirmation question — never bundled with another
+   app's refactor plan. Hygiene fixes for this app are already done by this
+   point; this ask is only about the bigger, optional refactor work.
 4. If they say no (or don't want a refactor plan right now) for that app, just note
    its structural gaps in the report as an open item and move on — don't push.
    Repeat steps 1–4 for the next app.
 
-### Create the plan
+### Create the refactor plan (check 5 only)
 
-Turn findings into a concrete, itemized plan. The checklist below is what you must
-have *worked out* for each item before presenting anything — it is not a template
-for the report itself. What you actually show the user must stay **short and
-simple**: one line per issue, one line per proposed change, in the same compressed
-form as the example below. Expand beyond one line only if a single item is
-genuinely destructive or ambiguous enough to need a caveat.
+This itemized-plan-and-confirm treatment applies **only** to check 5 refactor
+work — hygiene fixes (checks 1–4) were already applied in the previous section,
+with no plan or confirmation step. Turn an app's approved-for-planning
+structural gaps into a concrete, itemized plan. What you show the user must stay
+**short and simple**: one line per issue, one line per proposed change. Expand
+beyond one line only if a single item is genuinely destructive or ambiguous
+enough to need a caveat.
 
 For each item, work out (but don't necessarily print in full):
-- **What** needs to change (exact file(s), created vs modified vs removed-from-git).
-- **Why** (which check it addresses).
-- **Content summary** of what's being added/changed — not the full file necessarily,
-  but enough that the user knows what they're approving (e.g. "CLAUDE.md will
-  document: naming conventions [x], test requirements [y], directory layout [z]" or
-  "CI workflow gains a `test` job running `npm test` on push/PR"). When drafting new
-  `CLAUDE.md` content, base it on the rubric in check 2 (naming, single
-  responsibility, DRY/reuse, structure, readability, error handling, testing,
-  commit conventions), written in this repo's actual language/tooling terms and
-  laid out as the discrete headed rule sections check 2 requires — not one blob —
-  so the goal stated to the user should be recognizable as "standards for clean,
-  reusable, structured code," not a generic template.
-- **Assumptions or risks**, especially for anything destructive or security-sensitive
-  (e.g. "removing `.env.staging` from git tracking does not remove it from history —
-  if it contains real secrets, they should be rotated; git history purge is out of
-  scope unless you ask for it explicitly").
+- **What** needs to change (exact file(s), created vs modified vs removed).
+- **Why** (which structural gap it addresses).
+- **Content summary** of the change — enough that the user knows what they're
+  approving, not necessarily the full diff.
+- **Assumptions or risks**, especially for anything destructive.
 
-If the repo is a monorepo, open the findings with the app inventory from check 0
-(count and names), and label each numbered issue with which app it belongs to —
-never present a flattened list that hides that. Present the plan as: numbered
-issues found, then a bulleted list of proposed changes, ending with an explicit
-question asking whether to proceed — always shown to the user before any file is
-touched, no exceptions. Example (single-project repo; a monorepo's issue list
-would prefix each line with its app, e.g. "1. [apps/web] ..."):
+Present the plan as: numbered issues, then a bulleted list of proposed changes,
+ending with an explicit question asking whether to proceed — always shown before
+any refactor file is touched, no exceptions. Label it with the app name if this
+is a monorepo. Example:
 
-> I found the following issues:
+> For `apps/web`, proposed refactor:
 >
-> 1. `README.md` is generic and does not document this repository.
-> 2. `CLAUDE.md` is missing.
-> 3. GitHub Actions only runs lint; tests and build are not covered.
-> 4. CI workflows trigger on `master`, but the repo's default branch is `main` —
->    CI has not run on pushes/PRs to `main`. Jobs are also unnamed.
-> 5. `.env.staging` is committed.
+> 1. `OrderProcessor.jsx` (1,340 lines) mixes request handling, business logic,
+>    and data access.
+> 2. Validation logic is duplicated across `SignupForm.jsx`, `ProfileForm.jsx`,
+>    `BillingForm.jsx`.
 >
 > Proposed changes:
-> - Update `README.md` with repository-specific setup instructions.
-> - Add `CLAUDE.md` with the required repository standards.
-> - Update GitHub Actions to run lint, tests, and build.
-> - Update workflow triggers to `branches: [main, master]` and add named checks
->   (`name: lint`, `name: test`, `name: build`).
-> - Remove `.env.staging` from Git tracking and update `.gitignore`.
-> - Add `.env.example`.
+> - Split `OrderProcessor.jsx` into a handler, a service, and a data-access module.
+> - Extract shared validation into `lib/validation.js` and use it from all three forms.
 >
-> Should I proceed with these changes?
+> Should I proceed with this refactor?
 
-### Confirmation gate — do not skip, do not infer
+### Confirmation gate for refactor work — do not skip, do not infer
 
-**Only an explicit, unambiguous go-ahead authorizes execution.** Accept: "yes",
-"proceed", "go ahead", "approve", "do it", or equally unambiguous equivalents.
+**Only an explicit, unambiguous go-ahead authorizes refactor execution.** Accept:
+"yes", "proceed", "go ahead", "approve", "do it", or equally unambiguous
+equivalents.
 
 **None of the following count as approval, even if they sound positive:**
 - The user asking for the audit itself.
@@ -454,76 +465,74 @@ would prefix each line with its app, e.g. "1. [apps/web] ..."):
 - The user saying "looks good" or reacting positively without clearly authorizing
   execution.
 - Silence, or moving on to a different topic.
-- This skill's own judgment that a fix is "obviously" needed.
+- This skill's own judgment that a refactor is "obviously" needed.
 
-If approval is ambiguous, ask a direct yes/no confirmation question before touching
-any file — don't guess, don't proceed "to save time."
+If approval is ambiguous, ask a direct yes/no confirmation question before
+touching any refactor file — don't guess, don't proceed "to save time." This gate
+applies only to check 5 work; it never applies to the hygiene fixes from checks
+1–4, which are already done by this point.
 
-If the user asks for changes to the plan instead of approving it: revise the plan,
-present the revision, and ask for confirmation again. Repeat until an explicit
-approval or an explicit decline is received.
+If the user asks for changes to the refactor plan instead of approving it: revise
+it, present the revision, and ask for confirmation again. Repeat until an
+explicit approval or an explicit decline is received.
 
-### Execute — only the approved plan
+### Execute the refactor — only the approved plan
 
-- Make exactly the changes in the approved plan. No unrelated refactors, renames, or
+- Make exactly the changes in the approved refactor plan. No unrelated renames or
   "while I'm here" cleanup, even if clearly beneficial.
 - If, during execution, you discover an additional necessary change not in the
-  approved plan (e.g. fixing the README also requires updating a script that no
-  longer exists): **stop**, explain what was found and why it needs a change, update
-  the plan, and get confirmation on that addition specifically before making it. Do
-  not fold it in silently.
-- Prefer safe, reversible operations for anything git-tracked: use `git rm --cached`
-  to untrack a committed env file (keeps the local file, stops tracking it) rather
-  than deleting it outright, unless the user asked for outright deletion.
-- Never rewrite git history (e.g. to purge secrets from past commits) without a
-  separate, explicit ask — that's a distinct, higher-risk operation from what this
-  skill's default plan covers. If tracked secrets look real, call this out clearly
-  in the plan/report as something the user should rotate and decide on separately.
+  approved plan: **stop**, explain what was found and why it needs a change,
+  update the plan, and get confirmation on that addition specifically before
+  making it. Do not fold it in silently.
+- Never rewrite git history without a separate, explicit ask.
 
 ### Validate and report
 
-After execution:
+After hygiene fixes are applied and any approved refactor work is done:
 - Run any quick, safe validation available (e.g. `git status`, confirm new files
   exist, lint/parse a modified workflow YAML if a linter is available) — don't
   invent a validation step that isn't meaningful for the change made.
-- Report: files changed (created/modified/removed-from-tracking), a one-line summary
-  per change, validation performed, any findings from the audit that were **not**
-  included in the approved plan (still open issues), and anything that couldn't be
-  safely automated (e.g. rotating a leaked secret, purging git history — flag as
-  the user's action item, don't attempt it).
+- Report: files changed (created/modified/removed-from-tracking), a one-line
+  summary per change, validation performed, which apps' refactor plans were
+  approved/executed vs. declined/left open, and anything that couldn't be safely
+  automated (e.g. rotating a leaked secret, purging git history — flag as the
+  user's action item, don't attempt it).
 
-### Share a written audit report
+### Share a written report
 
-Always produce a Markdown report of the full audit as its own file, in addition to
-the short chat summary — this is the one file write in this skill that isn't gated
-behind plan approval, because it's a record of the audit itself, not a change to
-the repository's standards/config. Still, mention you're writing it.
+Always produce a Markdown report of the full audit as its own file, in addition
+to the short chat summary — this documents the audit and what was done, and its
+creation is never gated (hygiene fixes already happened by this point; the
+refactor section just records whether one was approved). Still, mention you're
+writing it.
 
-- Write it to `CODING_STANDARDS_AUDIT.md` at the audited repo's root (or the
+- Write it to `BASIC_REPO_STANDARDS.md` at the audited repo's root (or the
   relevant subproject root, for a single-subproject audit). If one already exists
-  from a prior run, overwrite it — the report reflects the latest audit, it isn't a
-  history log.
-- Contents: audit date, repo/subproject(s) covered, every finding from checks 1–5
-  grouped by check (including ones not acted on), the plan that was proposed, which
-  items were approved/executed vs. declined/left open, and for check 5, each app's
-  structural-gap findings (pattern + every affected file, per check 5's format)
-  plus the refactor-plan discussion outcome (asked, and what the user decided).
-  For a monorepo, break this down **per app/subproject**, not one merged list — a
-  reader needs to see that `apps/web` has flagged structural gaps (and opted into
-  a refactor plan) while `apps/admin` has none, not a single flattened summary
-  that hides which app each finding belongs to.
+  from a prior run, overwrite it — the report reflects the latest audit, it isn't
+  a history log.
+- Contents: audit date, repo/subproject(s) covered, every finding from checks
+  1–5, which hygiene fixes (checks 1–4) were applied automatically, and for check
+  5, each app's structural-gap findings (pattern + every affected file, per check
+  5's format) plus the refactor-plan outcome (asked, what the user decided, and
+  whether it was executed). For a monorepo, break this down **per app/
+  subproject**, not one merged list — a reader needs to see that `apps/web` has
+  flagged structural gaps (and opted into a refactor) while `apps/admin` has
+  none, not a single flattened summary that hides which app each finding belongs
+  to.
 - This report is for the team, not just this session — write it so someone who
   wasn't in the conversation can read it standalone and understand what was found
   and what happened.
-- Do not commit or push it — creating the file is exempt from the approval gate,
-  but putting it under version control is still a repository change like any
-  other, and stays behind the same explicit-approval rule as everything else.
+- Do not commit or push it without being asked — creating the file is exempt from
+  the approval gate, but putting it under version control is still a repository
+  change like any other.
 
 ## Hard rule recap
 
-No repository *fix* — anything that changes standards, config, or tracked
-content — happens before explicit approval of a specific, itemized plan.
-Inspection is always read-only. The one exception is the audit report file
-itself (see "Share a written audit report"), which documents the audit rather
-than changing the repo. When in doubt about whether something counts as
-approval, ask instead of assuming.
+Hygiene fixes (README, CLAUDE.md, CI, secrets/.gitignore — checks 1–4) are
+applied automatically right after inspection, with no plan or approval step.
+Codebase restructuring (check 5) is the only thing gated behind explicit approval
+of a specific, itemized plan, per app. Inspection itself is always read-only. The
+written report (`BASIC_REPO_STANDARDS.md`) is always created regardless of
+approval, since it documents the audit rather than changing repo standards.
+When in doubt about whether something is a hygiene fix vs. a refactor, or whether
+an approval is unambiguous, ask instead of assuming.

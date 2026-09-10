@@ -1,7 +1,7 @@
 {
   "name": "basic-repo-standards",
-  "description": "Audit a repository, app by app in a monorepo, against baseline hygiene standards (README, CLAUDE.md as discrete rule sections with coding standards + tech stack, CI coverage with named checks and main/master-safe branch triggers, secrets/.gitignore) and, per app, surface every codebase-structure gap grouped by pattern (lengthy files, mixed responsibilities, etc.) and ask whether to draft a refactoring plan. Only applies changes after explicit confirmation.",
-  "version": "2.4.0",
+  "description": "Audit a repository, app by app in a monorepo, against baseline hygiene standards (README, CLAUDE.md as discrete rule sections with coding standards + tech stack, CI coverage with named checks and main/master-safe branch triggers, secrets/.gitignore) and apply those hygiene fixes directly. Separately, per app, surface every codebase-structure gap grouped by pattern (lengthy files, mixed responsibilities, etc.) and ask whether to draft a refactoring plan — only that refactor work waits for explicit confirmation. Writes a BASIC_REPO_STANDARDS.md audit report.",
+  "version": "2.5.0",
   "author": {
     "name": "Lokal",
     "email": "tushar.b@getlokalapp.com"
