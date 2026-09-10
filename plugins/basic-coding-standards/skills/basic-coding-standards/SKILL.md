@@ -1,6 +1,6 @@
 ---
 name: basic-coding-standards
-description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation written as discrete headed rule sections (not one blob), GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, per app, surfacing that app's top 3 codebase-structure gaps (lengthy-file pattern, everything mixed in one place, missing pieces, etc.) and asking whether to include a refactoring plan built around the user's stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
+description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation written as discrete headed rule sections (not one blob), GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, per app, surfacing every significant codebase-structure gap (lengthy-file pattern, everything mixed in one place, missing pieces, etc.), grouped by pattern with every affected file clubbed together rather than one finding per file, and asking whether to include a refactoring plan built around the user's stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
 ---
 
 # Basic Coding Standards Audit
@@ -60,7 +60,7 @@ repo-once check when the repo is a monorepo. That includes the parts that are
 easy to do only at the root by accident: each app/package gets judged on its own
 README, its own `CLAUDE.md` (goal-statement preamble, tech stack, standards
 rubric), its own CI coverage, its own secrets/gitignore posture, and its own
-top-3 structural-gaps read — an app can be messy and gap-ridden while its
+structural-gaps read — an app can be messy and gap-ridden while its
 neighbor in the same repo is small and clean, and a monorepo-root `CLAUDE.md`
 does not excuse an individual app from needing its own if its stack/conventions
 differ. A repo-level finding like "root README is generic" is distinct from
@@ -286,12 +286,13 @@ to run even in a non-Python repo, since the tool itself is a Python package.
 - Does `.env.example` (or equivalent) exist to document required variables when a
   tracked or gitignored `.env` pattern is in use?
 
-### 5. Codebase structure — top 3 gaps per app
+### 5. Codebase structure — gaps per app, grouped by pattern
 
 This check is about the *code itself*, not repo hygiene files, so it's additive to
 1–4, not a replacement. Run it for **every** app/subproject from check 0 — this is
-not size-gated; even a small app can have real structural gaps worth naming (though
-a small, clean app may genuinely have fewer than 3 — see below).
+not size-gated; even a small app can have real structural gaps worth naming (and a
+small, clean app may genuinely have none — that's a fine outcome, don't invent
+findings to fill space).
 
 - Get a quick read-only signal, e.g.: `git ls-files | xargs wc -l 2>/dev/null | sort
   -rn | head -20` for the biggest files, a rough file count per top-level
@@ -311,30 +312,34 @@ a small, clean app may genuinely have fewer than 3 — see below).
   - **Gaps** — pieces missing relative to what a codebase this size/kind should
     have: no tests, no stated error-handling convention, no clear layering between
     e.g. data/business-logic/presentation.
-- From everything observed for **this app**, pick the **top 3** most significant
-  gaps — ranked by actual impact (how much it slows down or risks future work),
-  not just the first three noticed. If the app genuinely has fewer than 3
-  meaningful gaps, report fewer — never pad the list with minor nitpicks to hit
-  the number.
-- State each of the top 3 as **[named pattern/principle violated] — affected
+- **No cap on how many findings — but club by pattern, don't list one finding per
+  file.** Report every genuinely significant gap category found; there's no fixed
+  number (not 3, not any other target) to hit or stay under. What keeps this from
+  turning into a wall of noise is grouping: if several files across the app share
+  the same violation (e.g. all missing the same validation, or all copy-pasted
+  from the same original), that is **one** finding with every affected file listed
+  under it — not one finding per file. Only split into separate findings when the
+  pattern or root cause is genuinely different.
+- State each finding as **[named pattern/principle violated] — affected
   file(s)**, not a narrative paragraph: lead with the concrete label (e.g.
   "Duplicate/near-duplicate code," "Single Responsibility Principle violation,"
-  "Lengthy-file / god-file pattern," "No test coverage"), then the specific file(s)
-  and a short evidence note (line counts, what's duplicated, why it violates the
-  label). e.g.:
+  "Lengthy-file / god-file pattern," "No test coverage"), then *every* file that
+  shares it and a short evidence note (line counts, what's duplicated, why it
+  violates the label). e.g.:
   - "**Duplicate/messy code** — `src/features/chat-legacy/QuizCard.jsx` and
     `chat-redesign/QuizCard.jsx` (426 lines each) are near-duplicate components
     instead of one shared one."
-  - "**Single Responsibility Principle violation** — `MessageContent.jsx` (408-454
-    lines across two copies) mixes rendering, data-fetching, and formatting in one
-    component."
+  - "**Single Responsibility Principle violation** — `MessageContent.jsx`,
+    `OrderSummary.jsx`, `UserProfileCard.jsx` (each 300+ lines) all mix rendering,
+    data-fetching, and formatting in one component."
   - "**No test coverage** — no test framework or test files exist at all; only
     `dev`/`build`/`preview` scripts."
-  This makes each gap scannable as "pattern → files," not prose that has to be read
-  end to end to find out what's actually wrong or where.
+  This makes each finding scannable as "pattern → every file affected," not prose
+  that has to be read end to end to find out what's wrong or where, and not a
+  flood of near-duplicate one-file findings that are really the same problem.
 
-Do **not** draft a refactor plan at this point — report the top 3 and ask whether
-to include one; see Phase 2, which handles this per app.
+Do **not** draft a refactor plan at this point — report the findings and ask
+whether to include one; see Phase 2, which handles this per app.
 
 Repeat checks 1–5 for every subproject identified in step 0.
 
@@ -345,26 +350,29 @@ Repeat checks 1–5 for every subproject identified in step 0.
 Hygiene findings (checks 1–4) go straight into the itemized plan below. **Check 5
 does not** — it's a bigger, more subjective decision than "add a missing
 `.env.example`," so never draft a refactoring plan unprompted. Run this entire
-track **independently per app** — one app's top-3 gaps and yes/no answer are
-unrelated to another's; the user may want a refactor plan for `apps/web` while
-declining one entirely for `apps/admin`. Never merge multiple apps' gaps into one
-combined ask. Instead, per app:
+track **independently per app** — one app's gaps and yes/no answer are unrelated
+to another's; the user may want a refactor plan for `apps/web` while declining one
+entirely for `apps/admin`. Never merge multiple apps' gaps into one combined ask.
+Instead, per app:
 
-1. Report that app's **top 3 structural gaps** from check 5, each labeled by
-   pattern/principle with its affected file(s) (the format check 5 requires — not
-   a narrative paragraph), then ask directly whether they want a refactoring plan
-   for that app. e.g.:
+1. Report that app's **structural gaps** from check 5 — every pattern found, each
+   labeled by pattern/principle with *every* affected file clubbed under it (the
+   format check 5 requires — not a narrative paragraph, and not one finding per
+   file), then ask directly whether they want a refactoring plan for that app.
+   e.g.:
 
-   > For `apps/web`, the top structural gaps:
-   > 1. **Lengthy-file / god-file pattern** — `OrderProcessor.jsx` (1,340 lines)
-   >    mixes unrelated responsibilities.
-   > 2. **Duplicate/messy code** — validation logic duplicated in 4 places,
-   >    already diverged (one copy is missing a check the others have).
+   > For `apps/web`, the structural gaps found:
+   > 1. **Lengthy-file / god-file pattern** — `OrderProcessor.jsx` (1,340 lines),
+   >    `CheckoutFlow.jsx` (1,180 lines) mix unrelated responsibilities.
+   > 2. **Duplicate/messy code** — validation logic duplicated across
+   >    `SignupForm.jsx`, `ProfileForm.jsx`, `BillingForm.jsx`, already diverged
+   >    (one copy is missing a check the others have).
    > 3. **No test coverage** — the payments flow has no tests.
    >
    > Want me to put together a refactoring plan for `apps/web`?
 
-   Report fewer than 3 if that's genuinely all there is — don't inflate the list.
+   There's no fixed count to report — list every finding that clears the bar in
+   check 5, no more and no fewer.
 2. If they say yes, ask for their priorities/constraints before drafting anything —
    don't assume scope. Useful questions: which parts of the codebase matter most
    right now, incremental (small PRs alongside ongoing feature work) vs. a
@@ -377,8 +385,8 @@ combined ask. Instead, per app:
    want the quick hygiene fixes applied immediately while still thinking over a
    multi-week refactor for one specific app.
 4. If they say no (or don't want a refactor plan right now) for that app, just note
-   its top-3 gaps in the report as an open item and move on — don't push. Repeat
-   steps 1–4 for the next app.
+   its structural gaps in the report as an open item and move on — don't push.
+   Repeat steps 1–4 for the next app.
 
 ### Create the plan
 
@@ -498,11 +506,12 @@ the repository's standards/config. Still, mention you're writing it.
 - Contents: audit date, repo/subproject(s) covered, every finding from checks 1–5
   grouped by check (including ones not acted on), the plan that was proposed, which
   items were approved/executed vs. declined/left open, and for check 5, each app's
-  top-3 structural gaps plus the refactor-plan discussion outcome (asked, and what
-  the user decided). For a monorepo, break this down **per app/subproject**, not
-  one merged list — a reader needs to see that `apps/web` has 3 flagged structural
-  gaps (and opted into a refactor plan) while `apps/admin` has none, not a single
-  flattened summary that hides which app each finding belongs to.
+  structural-gap findings (pattern + every affected file, per check 5's format)
+  plus the refactor-plan discussion outcome (asked, and what the user decided).
+  For a monorepo, break this down **per app/subproject**, not one merged list — a
+  reader needs to see that `apps/web` has flagged structural gaps (and opted into
+  a refactor plan) while `apps/admin` has none, not a single flattened summary
+  that hides which app each finding belongs to.
 - This report is for the team, not just this session — write it so someone who
   wasn't in the conversation can read it standalone and understand what was found
   and what happened.
