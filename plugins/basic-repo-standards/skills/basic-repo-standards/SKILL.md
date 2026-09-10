@@ -65,6 +65,6 @@ fix the workflow if it's missing or targets the wrong branch.
 
 ## 6. Write the report
 
-Write `BASIC_REPO_STANDARDS.md` at the repo root (overwrite if one already
-exists). For each app/project, list what was found and what was fixed for each of
+Write `BASIC_REPO_STANDARDS.md` at the repo root (if one already
+exists, add a suffix to the name). For each app/project, list what was found and what was fixed for each of
 checks 2–5.
