@@ -1,6 +1,6 @@
 ---
 name: basic-coding-standards
-description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation, GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, for large/lengthy codebases, flagging structural debt with an explicit recommendation strength and (only if the user wants one) drafting a refactoring plan built around their stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
+description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation, GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, per app, surfacing that app's top 3 codebase-structure gaps (messy/scalable/missing pieces) and asking whether to include a refactoring plan built around the user's stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
 ---
 
 # Basic Coding Standards Audit
@@ -60,8 +60,8 @@ repo-once check when the repo is a monorepo. That includes the parts that are
 easy to do only at the root by accident: each app/package gets judged on its own
 README, its own `CLAUDE.md` (goal-statement preamble, tech stack, standards
 rubric), its own CI coverage, its own secrets/gitignore posture, and its own
-codebase-scale/structural-debt read — an app can be lengthy and debt-laden while
-its neighbor in the same repo is small and clean, and a monorepo-root `CLAUDE.md`
+top-3 structural-gaps read — an app can be messy and gap-ridden while its
+neighbor in the same repo is small and clean, and a monorepo-root `CLAUDE.md`
 does not excuse an individual app from needing its own if its stack/conventions
 differ. A repo-level finding like "root README is generic" is distinct from
 "packages/api has no README at all." Don't silently audit only the root when
@@ -229,83 +229,74 @@ which of the areas above are missing.
 - Does `.env.example` (or equivalent) exist to document required variables when a
   tracked or gitignored `.env` pattern is in use?
 
-### 5. Codebase scale — flag refactor opportunities in large/lengthy projects
+### 5. Codebase structure — top 3 gaps per app
 
 This check is about the *code itself*, not repo hygiene files, so it's additive to
-1–4, not a replacement. Only run it if the repo is actually large/lengthy — a small
-project doesn't need this.
+1–4, not a replacement. Run it for **every** app/subproject from check 0 — this is
+not size-gated; even a small app can have real structural gaps worth naming (though
+a small, clean app may genuinely have fewer than 3 — see below).
 
-- Get a quick read-only signal of scale and structural health, e.g.:
-  `git ls-files | xargs wc -l 2>/dev/null | sort -rn | head -20` for the biggest
-  files, a rough file count per top-level directory, and a skim for obvious smells
-  (a handful of "god files" far larger than the rest, deeply nested logic, the same
-  block of logic copy-pasted across several files, no discernible module
-  boundaries).
-- Treat the repo as "lengthy" when it shows real scale (well beyond a small
-  script/app) **and** structural symptoms like the above — size alone without
-  symptoms isn't a finding.
-- If it qualifies, record it as a distinct finding category — **structural debt**
-  — separate from the hygiene findings in checks 1–4. Name the specific symptoms
-  observed (e.g. "3 files over 1000 lines mixing unrelated responsibilities",
-  "the same validation logic duplicated in 4 places") rather than a vague "code
-  could be cleaner."
-- Judge and state **how strongly refactoring is recommended, and why** — this is
-  not optional hedging, give a real opinion:
-  - **Strongly recommend** when the symptoms are actively costing the team now —
-    the duplication has already caused a bug fixed in one copy but not another,
-    the god files are the ones getting touched most often (check recent commit
-    activity on them), or the tangled structure makes onboarding/reviewing
-    genuinely hard.
-  - **Recommend** when the debt is real but currently contained — it will bite
-    later (as the team or codebase grows) but isn't actively causing incidents.
-  - **Optional / low priority** when the smells are present but isolated,
-    low-churn, or in code nobody expects to extend further.
-  - Base the level on concrete evidence (churn/`git log --oneline -- <file>`
-    frequency on the worst files, duplication that has actually diverged and
-    caused a bug, size relative to the rest of the repo) — not a gut feeling.
+- Get a quick read-only signal, e.g.: `git ls-files | xargs wc -l 2>/dev/null | sort
+  -rn | head -20` for the biggest files, a rough file count per top-level
+  directory, and a skim for structural smells.
+- Look across three angles:
+  - **Messy** — readability/maintainability problems: "god files" mixing unrelated
+    responsibilities, duplicated logic across files, deep nesting, unclear naming,
+    no separation of concerns.
+  - **Scalable** — whether the current structure holds up as the app grows: tight
+    coupling between unrelated parts, no module boundaries, files that will keep
+    growing without a natural place to split, missing abstraction where reuse is
+    clearly needed.
+  - **Gaps** — pieces missing relative to what a codebase this size/kind should
+    have: no tests, no stated error-handling convention, no clear layering between
+    e.g. data/business-logic/presentation.
+- From everything observed for **this app**, pick the **top 3** most significant
+  gaps — ranked by actual impact (how much it slows down or risks future work),
+  not just the first three noticed. If the app genuinely has fewer than 3
+  meaningful gaps, report fewer — never pad the list with minor nitpicks to hit
+  the number.
+- For each of the top 3, cite concrete evidence (specific files/examples, not a
+  vague "could be cleaner").
 
-Do **not** draft a refactor plan yet at this point — see the refactor-plan handling
-in Phase 2, which requires asking the user first.
+Do **not** draft a refactor plan at this point — report the top 3 and ask whether
+to include one; see Phase 2, which handles this per app.
 
-Repeat checks 1–4 (and 5, where it applies) for every subproject identified in
-step 0.
+Repeat checks 1–5 for every subproject identified in step 0.
 
 ## Phase 2 — Audit findings → Plan → Confirm → Execute
 
-### Structural debt (check 5) gets a separate track — ask before planning
+### Codebase structure (check 5) gets a separate track — ask before planning, per app
 
-Hygiene findings (checks 1–4) go straight into the itemized plan below. **Structural
-debt does not** — it's a bigger, more subjective decision than "add a missing
-`.env.example`," so never draft a refactoring plan unprompted. In a monorepo, run
-this entire track **independently per app** that has a structural-debt finding —
-one app's recommendation strength, priorities/constraints, and yes/no answer are
-unrelated to another's; the user may approve a refactor plan for `apps/web` while
-declining one entirely for `apps/admin`. Never merge multiple apps' structural
-debt into one combined ask. Instead, per app:
+Hygiene findings (checks 1–4) go straight into the itemized plan below. **Check 5
+does not** — it's a bigger, more subjective decision than "add a missing
+`.env.example`," so never draft a refactoring plan unprompted. Run this entire
+track **independently per app** — one app's top-3 gaps and yes/no answer are
+unrelated to another's; the user may want a refactor plan for `apps/web` while
+declining one entirely for `apps/admin`. Never merge multiple apps' gaps into one
+combined ask. Instead, per app:
 
-1. Report the structural-debt finding alongside the others, but expand this one
-   beyond a single line: state the symptoms, your recommendation strength
-   (strongly recommend / recommend / optional — from check 5) **and the concrete
-   reason behind it**, then ask whether they want a refactor plan. e.g.: "This repo
-   also has notable structural debt: 3 files over 1000 lines mixing
-   responsibilities, and duplicated validation logic in 4 places that has already
-   diverged (one copy is missing a check the others have). I'd strongly recommend
-   refactoring this — it's an active bug source, not just untidiness. Want me to
-   put together a refactoring plan for it?" Give your honest assessment even when
-   it's "optional" — don't inflate urgency to push action, and don't soften a real
-   risk to avoid sounding alarmist.
+1. Report that app's **top 3 structural gaps** from check 5 (messy / scalable /
+   gaps), each with its concrete evidence, then ask directly whether they want a
+   refactoring plan for that app. e.g.: "For `apps/web`, the top structural gaps
+   I'd flag are: (1) 3 files over 1000 lines mixing unrelated responsibilities,
+   (2) the same validation logic duplicated in 4 places — already diverged, one
+   copy is missing a check the others have, (3) no test coverage on the payments
+   flow. Want me to put together a refactoring plan for `apps/web`?" Report
+   fewer than 3 if that's genuinely all there is — don't inflate the list.
 2. If they say yes, ask for their priorities/constraints before drafting anything —
    don't assume scope. Useful questions: which parts of the codebase matter most
    right now, incremental (small PRs alongside ongoing feature work) vs. a
    dedicated refactor push, any areas that are off-limits (e.g. "don't touch the
    payments module, it's being rewritten separately"), and any deadline pressure
    that should shape how aggressive to be.
-3. Only then draft the refactor plan, and present it as its **own** itemized list
-   with its own confirmation question — never bundled into the same yes/no as the
-   hygiene fixes. Someone may want the quick hygiene fixes applied immediately while
-   still thinking over a multi-week refactor.
-4. If they say no (or don't want a refactor plan right now), just note the finding
-   in the report as an open item and move on — don't push.
+3. Only then draft the refactor plan for that app, and present it as its **own**
+   itemized list with its own confirmation question — never bundled into the same
+   yes/no as the hygiene fixes, or with another app's refactor plan. Someone may
+   want the quick hygiene fixes applied immediately while still thinking over a
+   multi-week refactor for one specific app.
+4. If they say no (or don't want a refactor plan right now) for that app, just note
+   its top-3 gaps in the report as an open item and move on — don't push. Repeat
+   steps 1–4 for the next app.
 
 ### Create the plan
 
@@ -423,12 +414,12 @@ the repository's standards/config. Still, mention you're writing it.
   history log.
 - Contents: audit date, repo/subproject(s) covered, every finding from checks 1–5
   grouped by check (including ones not acted on), the plan that was proposed, which
-  items were approved/executed vs. declined/left open, and the refactor-plan
-  discussion outcome from check 5 if it came up (asked, and what the user decided).
-  For a monorepo, break this down **per app/subproject**, not one merged list —
-  a reader needs to see that `apps/web` has a strongly-recommended refactor while
-  `apps/admin` is clean, not a single flattened summary that hides which app each
-  finding belongs to.
+  items were approved/executed vs. declined/left open, and for check 5, each app's
+  top-3 structural gaps plus the refactor-plan discussion outcome (asked, and what
+  the user decided). For a monorepo, break this down **per app/subproject**, not
+  one merged list — a reader needs to see that `apps/web` has 3 flagged structural
+  gaps (and opted into a refactor plan) while `apps/admin` has none, not a single
+  flattened summary that hides which app each finding belongs to.
 - This report is for the team, not just this session — write it so someone who
   wasn't in the conversation can read it standalone and understand what was found
   and what happened.

@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "basic-coding-standards",
-      "description": "Audit a repository, app by app in a monorepo, against baseline hygiene standards (README, CLAUDE.md coding standards + tech stack, CI coverage with named checks and main/master-safe branch triggers, secrets/.gitignore) and, for large codebases, flag structural debt with a recommendation strength and optionally draft a refactoring plan. Only applies changes after explicit confirmation.",
+      "description": "Audit a repository, app by app in a monorepo, against baseline hygiene standards (README, CLAUDE.md coding standards + tech stack, CI coverage with named checks and main/master-safe branch triggers, secrets/.gitignore) and, per app, surface its top 3 codebase-structure gaps and ask whether to draft a refactoring plan. Only applies changes after explicit confirmation.",
       "source": "./plugins/basic-coding-standards",
       "category": "productivity"
     }
