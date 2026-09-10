@@ -1,7 +1,7 @@
 {
   "name": "basic-coding-standards",
   "description": "Audit a repository, app by app in a monorepo, against baseline hygiene standards (README, CLAUDE.md as discrete rule sections with coding standards + tech stack, CI coverage with named checks and main/master-safe branch triggers, secrets/.gitignore) and, per app, surface its top 3 codebase-structure gaps (lengthy files, mixed responsibilities, etc.) and ask whether to draft a refactoring plan. Only applies changes after explicit confirmation.",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "author": {
     "name": "Lokal",
     "email": "tushar.b@getlokalapp.com"

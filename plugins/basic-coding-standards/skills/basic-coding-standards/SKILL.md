@@ -209,11 +209,26 @@ name them for what's actually in the repo):
 
 ## Commits & PRs
 [rule: message format, PR description requirements]
+
+## AI-Assisted Review Tooling (optional)
+[optional: recommend a codebase-graph/blast-radius tool for AI code review, see below]
 ```
 
 Each section should be short — a rule, not an essay — and every rule stated
 independently checkable on its own, so a reader (or reviewer) can jump straight to
 the one section relevant to what they're doing instead of reading the whole file.
+
+**Optional: AI-assisted review tooling.** Unlike the sections above, this one is a
+suggestion, not a required rubric item — present it in the plan as an optional
+addition the user can accept or skip, never fold it in silently. When it fits
+(especially larger codebases, or ones where check 5 found real structural gaps),
+the `CLAUDE.md` may recommend installing
+[code-review-graph](https://github.com/tirth8205/code-review-graph) — a CLI/MCP
+tool (`pip install code-review-graph`) that parses the codebase into a dependency
+graph so AI coding assistants can scope a review to the actual "blast radius" of a
+change instead of reading the whole repo. It works across languages (tree-sitter
+based), so it fits regardless of the repo's stack. Note it needs Python available
+to run even in a non-Python repo, since the tool itself is a Python package.
 
 ### 3. GitHub Actions / CI
 
