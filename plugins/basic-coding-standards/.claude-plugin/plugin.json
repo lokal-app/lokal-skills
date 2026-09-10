@@ -1,0 +1,9 @@
+{
+  "name": "basic-coding-standards",
+  "description": "Audit a repository against baseline, tech-stack-agnostic hygiene standards (README, CLAUDE.md coding standards, CI coverage, secrets/.gitignore) and propose a fix plan, only applying changes after explicit confirmation.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Lokal",
+    "email": "tushar.b@getlokalapp.com"
+  }
+}

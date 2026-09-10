@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "lokal-skills",
+  "description": "Lokal's shared Claude Code skills for org-wide, technology-agnostic coding standards.",
+  "owner": {
+    "name": "Lokal",
+    "email": "tushar.b@getlokalapp.com"
+  },
+  "plugins": [
+    {
+      "name": "basic-coding-standards",
+      "description": "Audit a repository against baseline, tech-stack-agnostic hygiene standards (README, CLAUDE.md coding standards, CI coverage, secrets/.gitignore) and propose a fix plan, only applying changes after explicit confirmation.",
+      "source": "./plugins/basic-coding-standards",
+      "category": "productivity"
+    }
+  ]
+}
