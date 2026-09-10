@@ -1,6 +1,6 @@
 ---
 name: basic-coding-standards
-description: Audit a repository (and any subprojects/monorepo packages) against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation, GitHub Actions CI coverage and branch-name correctness, committed secrets/.env files, .gitignore, .env.example — plus, for large/lengthy codebases, flagging structural debt and (only if the user wants one) drafting a refactoring plan built around their stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
+description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation, GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, for large/lengthy codebases, flagging structural debt with an explicit recommendation strength and (only if the user wants one) drafting a refactoring plan built around their stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
 ---
 
 # Basic Coding Standards Audit
@@ -29,25 +29,43 @@ Do not run any command or tool call that writes, moves, deletes, stages, or comm
 anything in the target repo during this phase. Read-only shell (`ls`, `find`, `grep`,
 `git status`, `git ls-files`, `cat`/Read), and nothing else.
 
-### 0. Map the repo shape first — detect subprojects / monorepo
+### 0. Map the repo shape first — count and name every subproject/app
 
 Before auditing individual files, determine whether this is a single project or a
-monorepo, since every later check must be repeated per subproject.
+monorepo. Don't stop at "yes, this is a monorepo" — produce a concrete, named,
+counted inventory: exactly how many apps/subprojects exist and what each is called
+(e.g. "3 apps: `apps/web`, `apps/admin`, `apps/api`"). This inventory is a
+first-class fact of the audit, not internal bookkeeping — state it up front in the
+findings, since every check and the final report are organized around it, and
+every later check must be repeated for each entry in it.
 
 Signals to check:
 - Workspace manifests: `pnpm-workspace.yaml`, `lerna.json`, `nx.json`, `turbo.json`,
   a `"workspaces"` field in root `package.json`, `go.work`, a multi-module
-  `settings.gradle`.
+  `settings.gradle` — these often enumerate the subprojects explicitly; read the
+  list out of the manifest rather than inferring it only from directory names.
 - Multiple independent manifests below root: several `package.json` / `pyproject.toml`
   / `go.mod` / `pom.xml` / `Cargo.toml` files in different top-level directories that
   each look like an installable/buildable unit (has its own lockfile or build config).
 - A top-level layout like `apps/*`, `packages/*`, `services/*`, each with its own
   README/CI/config.
 
+If the workspace manifest and the directory listing disagree (e.g. a folder under
+`apps/` isn't in the workspace's package list, or vice versa), that mismatch is
+itself worth a note — don't silently pick one source over the other.
+
 If subprojects exist, record the list and note that each one needs its own pass
-through checks 1–4 below (a repo-level finding like "root README is generic" is
-distinct from "packages/api has no README at all"). Don't silently audit only the
-root when subprojects exist.
+through **every** check below, 1 through 5 — nothing in this skill is a
+repo-once check when the repo is a monorepo. That includes the parts that are
+easy to do only at the root by accident: each app/package gets judged on its own
+README, its own `CLAUDE.md` (goal-statement preamble, tech stack, standards
+rubric), its own CI coverage, its own secrets/gitignore posture, and its own
+codebase-scale/structural-debt read — an app can be lengthy and debt-laden while
+its neighbor in the same repo is small and clean, and a monorepo-root `CLAUDE.md`
+does not excuse an individual app from needing its own if its stack/conventions
+differ. A repo-level finding like "root README is generic" is distinct from
+"packages/api has no README at all." Don't silently audit only the root when
+subprojects exist.
 
 ### 1. README
 
@@ -160,16 +178,28 @@ which of the areas above are missing.
   doesn't exercise it, not stylistic preferences.
 - If workflows reference environment variables/secrets, check whether they're pulled
   from `secrets.*` / `vars.*` properly or hardcoded inline.
-- **Confirm the branch name actually matches the repo.** Find the repo's real
-  default branch (`git symbolic-ref refs/remotes/origin/HEAD` or `git remote show
-  origin`, or ask the user if that's not conclusive — don't just assume `main`).
-  Then check every `on: push`/`on: pull_request` (and any other branch-filtered
-  trigger, protection rule references, deploy-target branch, etc.) `branches:` list
-  in every workflow file against that real name. Flag any workflow hardcoded to a
-  branch that isn't the actual default (most commonly `master` referenced in a repo
-  whose default branch is now `main`, or vice versa) — this is a **silent CI
-  failure mode**: the workflow file is present and looks correct, but never
-  triggers, because it filters on a branch nobody pushes to.
+- **Named checks.** Every job (and the workflow itself) should have an explicit,
+  descriptive `name:` — not just a filename-derived or default identifier. A status
+  check with a clear name (e.g. `name: lint`, `name: test`, workflow
+  `name: CI`) is what shows up in the PR checks list and in branch-protection
+  "required status checks," so an unnamed or vaguely named job (`build`, `job1`,
+  or nothing at all) is a finding: it makes required checks hard to configure
+  correctly and hard for a reviewer to tell what actually ran.
+- **Confirm the branch name actually matches the repo, and trigger on both.** Find
+  the repo's real default branch (`git symbolic-ref refs/remotes/origin/HEAD` or
+  `git remote show origin`, or ask the user if that's not conclusive — don't just
+  assume `main`). Check every `on: push`/`on: pull_request` (and any other
+  branch-filtered trigger, protection rule references, deploy-target branch, etc.)
+  `branches:` list in every workflow file against that real name — a workflow
+  hardcoded to a branch that isn't the actual default (most commonly `master` in a
+  repo whose default is now `main`, or vice versa) is a **silent CI failure mode**:
+  the file is present and looks correct, but never triggers, because it filters on
+  a branch nobody pushes to. The fix to propose is not just "rename to the
+  default" — recommend the trigger list include **both** the actual default branch
+  **and** the other of `main`/`master` (i.e. `branches: [main, master]`), so CI
+  keeps working through a branch rename, a fork, or any repo where the two are
+  used inconsistently, instead of being one rename away from silently going dark
+  again.
 
 ### 4. Secrets, `.gitignore`, `.env.example`
 
@@ -284,9 +314,13 @@ For each item, work out (but don't necessarily print in full):
   if it contains real secrets, they should be rotated; git history purge is out of
   scope unless you ask for it explicitly").
 
-Present the plan as: numbered issues found, then a bulleted list of proposed changes,
-ending with an explicit question asking whether to proceed — always shown to the
-user before any file is touched, no exceptions. Example:
+If the repo is a monorepo, open the findings with the app inventory from check 0
+(count and names), and label each numbered issue with which app it belongs to —
+never present a flattened list that hides that. Present the plan as: numbered
+issues found, then a bulleted list of proposed changes, ending with an explicit
+question asking whether to proceed — always shown to the user before any file is
+touched, no exceptions. Example (single-project repo; a monorepo's issue list
+would prefix each line with its app, e.g. "1. [apps/web] ..."):
 
 > I found the following issues:
 >
@@ -294,14 +328,15 @@ user before any file is touched, no exceptions. Example:
 > 2. `CLAUDE.md` is missing.
 > 3. GitHub Actions only runs lint; tests and build are not covered.
 > 4. CI workflows trigger on `master`, but the repo's default branch is `main` —
->    CI has not run on pushes/PRs to `main`.
+>    CI has not run on pushes/PRs to `main`. Jobs are also unnamed.
 > 5. `.env.staging` is committed.
 >
 > Proposed changes:
 > - Update `README.md` with repository-specific setup instructions.
 > - Add `CLAUDE.md` with the required repository standards.
 > - Update GitHub Actions to run lint, tests, and build.
-> - Update workflow trigger branches from `master` to `main`.
+> - Update workflow triggers to `branches: [main, master]` and add named checks
+>   (`name: lint`, `name: test`, `name: build`).
 > - Remove `.env.staging` from Git tracking and update `.gitignore`.
 > - Add `.env.example`.
 >
@@ -371,6 +406,10 @@ the repository's standards/config. Still, mention you're writing it.
   grouped by check (including ones not acted on), the plan that was proposed, which
   items were approved/executed vs. declined/left open, and the refactor-plan
   discussion outcome from check 5 if it came up (asked, and what the user decided).
+  For a monorepo, break this down **per app/subproject**, not one merged list —
+  a reader needs to see that `apps/web` has a strongly-recommended refactor while
+  `apps/admin` is clean, not a single flattened summary that hides which app each
+  finding belongs to.
 - This report is for the team, not just this session — write it so someone who
   wasn't in the conversation can read it standalone and understand what was found
   and what happened.
