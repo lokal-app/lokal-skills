@@ -262,7 +262,12 @@ step 0.
 
 Hygiene findings (checks 1–4) go straight into the itemized plan below. **Structural
 debt does not** — it's a bigger, more subjective decision than "add a missing
-`.env.example`," so never draft a refactoring plan unprompted. Instead:
+`.env.example`," so never draft a refactoring plan unprompted. In a monorepo, run
+this entire track **independently per app** that has a structural-debt finding —
+one app's recommendation strength, priorities/constraints, and yes/no answer are
+unrelated to another's; the user may approve a refactor plan for `apps/web` while
+declining one entirely for `apps/admin`. Never merge multiple apps' structural
+debt into one combined ask. Instead, per app:
 
 1. Report the structural-debt finding alongside the others, but expand this one
    beyond a single line: state the symptoms, your recommendation strength
