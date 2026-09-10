@@ -1,6 +1,6 @@
 ---
 name: basic-coding-standards
-description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation, GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, per app, surfacing that app's top 3 codebase-structure gaps (messy/scalable/missing pieces) and asking whether to include a refactoring plan built around the user's stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
+description: Audit a repository — and, app by app, every subproject/monorepo package it contains — against baseline hygiene standards — README specificity, CLAUDE.md presence/coding-standards content/tech-stack documentation written as discrete headed rule sections (not one blob), GitHub Actions CI coverage with named checks and branch triggers covering both the real default branch and main/master, committed secrets/.env files, .gitignore, .env.example — plus, per app, surfacing that app's top 3 codebase-structure gaps (lengthy-file pattern, everything mixed in one place, missing pieces, etc.) and asking whether to include a refactoring plan built around the user's stated priorities. Proposes a fix plan and only applies changes after explicit user confirmation. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar. Never modifies files during inspection; strict Plan → Confirm → Execute gate before any write.
 ---
 
 # Basic Coding Standards Audit
@@ -173,6 +173,48 @@ that only restates the tech stack, lists dependencies, or repeats the README doe
 exists. A `CLAUDE.md` that covers the above only partially is a finding too: name
 which of the areas above are missing.
 
+**Required format — discrete rules, not one blob.** The document itself must model
+the structure it preaches (check 2's own "Structure & boundaries" item applies to
+`CLAUDE.md` as a file, too). Each topic above gets its **own heading** and a short,
+direct rule statement under it — never all of them merged into one undifferentiated
+paragraph or one flat bullet list with no separation. A `CLAUDE.md` with genuinely
+good content that's still crammed into a single wall of text is a **formatting
+finding**, separate from a content finding — call it out even when the content
+itself is otherwise solid. Skeleton to draft against (headings are illustrative;
+name them for what's actually in the repo):
+
+```markdown
+> [goal statement — verbatim, from above]
+
+## Tech Stack
+[languages/frameworks/tools, factual]
+
+## Naming
+[rule, 1-2 sentences]
+
+## Structure
+[rule: directory/module layout, what goes where]
+
+## Reuse (DRY)
+[rule: where shared logic lives]
+
+## Readability
+[rule: clarity over cleverness, comment policy]
+
+## Error Handling
+[rule: convention for this repo]
+
+## Testing
+[rule: what must be tested, to what extent]
+
+## Commits & PRs
+[rule: message format, PR description requirements]
+```
+
+Each section should be short — a rule, not an essay — and every rule stated
+independently checkable on its own, so a reader (or reviewer) can jump straight to
+the one section relevant to what they're doing instead of reading the whole file.
+
 ### 3. GitHub Actions / CI
 
 - Does `.github/workflows/` contain any workflow files?
@@ -240,9 +282,13 @@ a small, clean app may genuinely have fewer than 3 — see below).
   -rn | head -20` for the biggest files, a rough file count per top-level
   directory, and a skim for structural smells.
 - Look across three angles:
-  - **Messy** — readability/maintainability problems: "god files" mixing unrelated
-    responsibilities, duplicated logic across files, deep nesting, unclear naming,
-    no separation of concerns.
+  - **Messy** — readability/maintainability problems. Concretely, look for: a
+    **lengthy-file pattern** (one or more files far larger than the rest, that
+    keep growing because there's no natural place to split them); **everything
+    mixed in one place** — unrelated responsibilities (e.g. request handling,
+    business logic, and data access all in the same file/function) with no
+    separation of concerns; duplicated logic copy-pasted across files instead of
+    shared; deep nesting; unclear/misleading naming.
   - **Scalable** — whether the current structure holds up as the app grows: tight
     coupling between unrelated parts, no module boundaries, files that will keep
     growing without a natural place to split, missing abstraction where reuse is
@@ -316,9 +362,10 @@ For each item, work out (but don't necessarily print in full):
   "CI workflow gains a `test` job running `npm test` on push/PR"). When drafting new
   `CLAUDE.md` content, base it on the rubric in check 2 (naming, single
   responsibility, DRY/reuse, structure, readability, error handling, testing,
-  commit conventions) written in this repo's actual language/tooling terms — the
-  goal stated to the user should be recognizable as "standards for clean, reusable,
-  structured code," not a generic template.
+  commit conventions), written in this repo's actual language/tooling terms and
+  laid out as the discrete headed rule sections check 2 requires — not one blob —
+  so the goal stated to the user should be recognizable as "standards for clean,
+  reusable, structured code," not a generic template.
 - **Assumptions or risks**, especially for anything destructive or security-sensitive
   (e.g. "removing `.env.staging` from git tracking does not remove it from history —
   if it contains real secrets, they should be rotated; git history purge is out of
