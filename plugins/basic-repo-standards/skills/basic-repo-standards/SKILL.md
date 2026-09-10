@@ -59,9 +59,8 @@ of silently untracking it — that needs a rotation decision, not an automatic f
 
 ## 5. GitHub Actions
 
-Does `.github/workflows/` exist, and does it trigger on both development and production branches this repo
-actually uses (check what's real, e.g. `dev`/`main` — don't assume)? Add or
-fix the workflow if it's missing or targets the wrong branch.
+Does `.github/workflows/` exist, and does it trigger on both development and production branches in this repo (check what's real, e.g. `staging`/`main` — don't assume)? Ask if not sure.
+Add or fix the workflow if it's missing or targets the wrong branch.
 
 ## 6. Write the report
 
