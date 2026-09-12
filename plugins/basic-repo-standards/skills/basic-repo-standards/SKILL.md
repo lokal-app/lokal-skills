@@ -1,11 +1,11 @@
 ---
 name: basic-repo-standards
-description: Identify each project/app in a repo (or the repo itself, if single-project) and make sure each has a real README.md (not just a template), a CLAUDE.md with the baseline coding-standards goal statement, .gitignore coverage for env files plus a .env.example, and GitHub Actions CI covering the repo's actual working branches — fixing any gaps directly, no confirmation needed — then write a BASIC_REPO_STANDARDS.md report. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar.
+description: Identify each project/app in a repo (or the repo itself, if single-project) and make sure each has a real README.md (not just a template), a CLAUDE.md with the baseline coding-standards goal statement, .gitignore coverage for env files plus a .env.example, GitHub Actions CI covering the repo's actual working branches, and a PR template — fixing any gaps directly, no confirmation needed — then write a BASIC_REPO_STANDARDS.md report. Use when the user asks to "audit this repo", "standardize this repo", "check repo hygiene/standards", "onboard this repo", or similar.
 ---
 
 # Basic Repo Standards
 
-This is stack independent. Identify the apps, run the four checks below on each one,
+This is stack independent. Identify the apps, run the checks below on each one,
 fix any gap directly (these are additive, low-risk changes — no need to ask
 first), then write the report.
 
@@ -62,8 +62,55 @@ of silently untracking it — that needs a rotation decision, not an automatic f
 Does `.github/workflows/` exist, and does it trigger on both development and production branches in this repo (check what's real, e.g. `staging`/`main` — don't assume)? Ask if not sure.
 Add or fix the workflow if it's missing or targets the wrong branch.
 
-## 6. Write the report
+## 6. PR template
+
+This is a repo-root concern, not per-app — check once regardless of monorepo layout.
+
+Does `.github/PULL_REQUEST_TEMPLATE.md` exist? If missing, create it with this
+content verbatim:
+
+```markdown
+## Summary
+
+<!-- What does this PR change, and why? Keep it to the point and easy to understand. -->
+
+## Type of change
+
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactor (no functional change)
+- [ ] Documentation
+- [ ] Other
+
+## Approach
+
+<!-- How was this implemented, and why this approach over alternatives? Keep it to the point and easy to understand. -->
+
+## How to reproduce (remove if not applicable)
+
+<!-- Steps to see the issue (before) or verify the change (after), e.g.: -->
+<!-- 1. Run `npm run dev` -->
+<!-- 2. Go to ... -->
+<!-- 3. ... -->
+
+## Testing (remove if not applicable)
+
+<!-- How was this verified? Commands run, manual steps, etc. -->
+
+## Screenshots (remove if not applicable)
+
+<!-- Before/after screenshots or a screen recording, for UI changes. -->
+
+## Declaration
+
+- [ ] Self-tested this change
+```
+
+If it already exists, leave it as is — don't overwrite existing project-specific
+templates.
+
+## 7. Write the report
 
 Write `BASIC_REPO_STANDARDS.md` at the repo root (if one already
 exists, add a suffix to the name). For each app/project, list what was found and what was fixed for each of
-checks 2–5.
+checks 2–6.
